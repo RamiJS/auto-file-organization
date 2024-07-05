@@ -8,6 +8,13 @@
 
 #define PDF_FILE ".pdf"
 
+namespace fs = std::filesystem;
+
+using namespace std;
+
+typedef std::vector<std::string> stringvec; 
+
+
 // 1. i will look for the path, in my case, the download folder ✅
 // 2. i wanna store all files in a vector, only files
 // 3. then i will check for each file's extension
@@ -18,10 +25,26 @@
 // will go to "others" folder
 
 
-namespace fs = std::filesystem;
-using namespace std;
+bool isImage(const string &ext){
+    return ext == "png" || ext == "jpeg" || ext == "jpg" || ext == "webp";
+}
 
-typedef std::vector<std::string> stringvec; 
+int createDirectory(stringvec &directories, const string &myDir) {
+    if(std::find(directories.begin(), directories.end(), myDir) == directories.end()) {
+        if(fs::create_directory(myDir)){
+            cout << "a directory has been successfully created: " << myDir;
+            directories.push_back(myDir);
+        } else {
+            cout << "Error: directory already exists";
+        }
+    }
+}
+
+int MoveFromTo (const string &sourceFile, const string &destinationFile){
+    fs::path filePath(sourceFile);
+    fs::rename(sourceFile, destinationFile + "/" + filePath.filename().string());
+    return 0;
+}
 int main(){
 
     const char* homeDir = getenv("HOME");
@@ -46,34 +69,35 @@ int main(){
         int pos = file.find(".")+1;
         string ext = file.substr(pos, file.length()-1);
 
-        fs::path filePath(file);
-        string sourceFile = filePath.string();
-        string destDir = downloadsPath + "/" + ext;
-        string destFile = destDir + "/" + filePath.filename().string();
-
-        if(std::find(directories.begin(), directories.end(), ext) == directories.end())
-            if(ext == "jpg" || "png" || "jpeg" || ".webp"){
-                if(fs::create_directory(downloadsPath + "/" + "images")) {
-                    cout << "created directory: " << "images" << " successfully" << endl;
-                    directories.push_back(downloadsPath + "/" + "images");
-                } else {
-                    cout << "directory images already exists" << endl;
-                }
-            } else {
-            if(fs::create_directory(downloadsPath + "/" + ext)){
-                cout << "created directory: " << ext << " successfully" << endl;
-                directories.push_back(downloadsPath + "/" + ext);
-            }
-            else{
-                cout << "directory already exist: " << ext << endl; 
-            }
-            }
-
          try {
-            if(ext == "jpg" || "png" || "jpeg" || ".webp") {
-                fs::rename(sourceFile, downloadsPath + "/" + "images" + "/" + filePath.filename().string());
-            } else
-                fs::rename(sourceFile, destFile);
+            if(ext == "pdf") {
+                createDirectory(directories, downloadsPath + "/pdf");
+                MoveFromTo(file, downloadsPath + "/pdf");
+            } 
+            else if(ext == "docx" || ext == "doc") {
+                createDirectory(directories, downloadsPath + "/docs");
+                MoveFromTo(file, downloadsPath + "/docs");
+
+            } 
+            else if(ext == "mp3" || ext == "wav") {
+                createDirectory(directories, downloadsPath + "/audio");
+                MoveFromTo(file, downloadsPath + "/audio");
+
+            } 
+            else if(ext == "mp4" || ext == "webm" || ext == "mov" || ext == "avi") {
+                createDirectory(directories, downloadsPath + "/videos");
+                MoveFromTo(file, downloadsPath + "/videos");
+            } 
+            else if(isImage(ext)) {
+                createDirectory(directories, downloadsPath + "/images");
+                MoveFromTo(file, downloadsPath + "/images");
+
+            } 
+            else {
+                cout << ext << endl;
+                createDirectory(directories, downloadsPath + "/others");
+                MoveFromTo(file, downloadsPath + "/others");
+            }
         } catch (const fs::filesystem_error &e) {
             cout << "error moving file: " << e.what() << endl;
         }
